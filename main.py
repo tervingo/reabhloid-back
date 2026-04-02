@@ -13,7 +13,11 @@ app = FastAPI(title="Reabhloid API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://reabhloid.netlify.app",
+        "http://localhost:5173",
+        "http://localhost:4173",
+    ],
     allow_methods=["*"],
     allow_headers=["*"],
 )
