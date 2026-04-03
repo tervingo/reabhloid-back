@@ -134,6 +134,19 @@ async def add_extinction(run_id: str, body: ExtinctionEvent):
     return {"ok": True}
 
 
+# --- Delete endpoints ---
+
+@app.delete("/runs/{run_id}")
+async def delete_run(run_id: str):
+    await db.snapshots.delete_many({"run_id": run_id})
+    await db.species_events.delete_many({"run_id": run_id})
+    await db.extinctions.delete_many({"run_id": run_id})
+    result = await db.runs.delete_one({"_id": run_id})
+    if result.deleted_count == 0:
+        raise HTTPException(404, "Run not found")
+    return {"ok": True}
+
+
 # --- Query endpoints ---
 
 @app.get("/runs")
