@@ -81,10 +81,19 @@ class ExtinctionEvent(BaseModel):
     speciesId: int
     lastPopulation: int
 
+class FinalCell(BaseModel):
+    x: int
+    y: int
+    speciesId: int
+    energy: float
+    tempOpt: float
+    predationIndex: float
+
 class EndRun(BaseModel):
     tick: int
     reason: str  # "max_ticks" | "extinction" | "dominance" | "manual"
     dominantSpeciesId: Optional[int] = None
+    finalBoard: Optional[list[FinalCell]] = None
 
 class UpdateRun(BaseModel):
     comment: str
@@ -109,15 +118,15 @@ async def start_run(body: StartRun):
 
 @app.put("/runs/{run_id}/end")
 async def end_run(run_id: str, body: EndRun):
-    result = await db.runs.update_one(
-        {"_id": run_id},
-        {"$set": {
-            "endedAt": datetime.utcnow(),
-            "endReason": body.reason,
-            "endTick": body.tick,
-            "dominantSpeciesId": body.dominantSpeciesId,
-        }}
-    )
+    update: dict = {
+        "endedAt": datetime.utcnow(),
+        "endReason": body.reason,
+        "endTick": body.tick,
+        "dominantSpeciesId": body.dominantSpeciesId,
+    }
+    if body.finalBoard is not None:
+        update["finalBoard"] = [c.model_dump() for c in body.finalBoard]
+    result = await db.runs.update_one({"_id": run_id}, {"$set": update})
     if result.matched_count == 0:
         raise HTTPException(404, "Run not found")
     return {"ok": True}
