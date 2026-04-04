@@ -85,6 +85,10 @@ class EndRun(BaseModel):
     reason: str  # "max_ticks" | "extinction" | "dominance" | "manual"
     dominantSpeciesId: Optional[int] = None
 
+class UpdateRun(BaseModel):
+    comment: str
+    rating: int  # 0 = sin valoración, 1-3 = estrellas
+
 
 # --- Write endpoints ---
 
@@ -96,6 +100,8 @@ async def start_run(body: StartRun):
         "settings": body.settings.model_dump(),
         "endedAt": None,
         "endReason": None,
+        "comment": "",
+        "rating": 0,
     }
     await db.runs.insert_one(doc)
     return {"ok": True, "run_id": body.run_id}
@@ -131,6 +137,19 @@ async def add_snapshot(run_id: str, body: Snapshot):
 async def add_extinction(run_id: str, body: ExtinctionEvent):
     doc = {"run_id": run_id, **body.model_dump()}
     await db.extinctions.insert_one(doc)
+    return {"ok": True}
+
+
+@app.patch("/runs/{run_id}")
+async def update_run(run_id: str, body: UpdateRun):
+    if body.rating not in (0, 1, 2, 3):
+        raise HTTPException(400, "rating must be 0, 1, 2 or 3")
+    result = await db.runs.update_one(
+        {"_id": run_id},
+        {"$set": {"comment": body.comment, "rating": body.rating}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(404, "Run not found")
     return {"ok": True}
 
 
