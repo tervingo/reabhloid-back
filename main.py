@@ -40,6 +40,7 @@ class RunSettings(BaseModel):
     seasonAmplitude: float
     zoneBaseTemps: list[float]
     zoneRegen: list[float]
+    tempStressIntensity: float = 0.1
 
 class StartRun(BaseModel):
     run_id: str
