@@ -110,6 +110,7 @@ async def start_run(body: StartRun):
         "_id": body.run_id,
         "startedAt": datetime.utcnow(),
         "settings": body.settings.model_dump(),
+        "worldType": body.settings.worldType,
         "endedAt": None,
         "endReason": None,
         "comment": "",
