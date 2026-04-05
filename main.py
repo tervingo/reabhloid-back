@@ -41,6 +41,7 @@ class RunSettings(BaseModel):
     zoneBaseTemps: list[float]
     zoneRegen: list[float]
     tempStressIntensity: float = 0.1
+    worldType: str = "STANDARD"
 
 class StartRun(BaseModel):
     run_id: str
