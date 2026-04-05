@@ -72,6 +72,7 @@ class SpeciesSnapshot(BaseModel):
     meanEnergy: float
     dominantZone: int
     activePredators: int
+    metabolicType: str = "aerobic"
 
 class Snapshot(BaseModel):
     tick: int
