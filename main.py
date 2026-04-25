@@ -182,8 +182,29 @@ async def delete_run(run_id: str):
 # --- Query endpoints ---
 
 @app.get("/runs")
-async def list_runs():
+async def list_runs(min_pop: int = 0, cleanup: bool = False):
     runs = await db.runs.find({}, {"settings": 0}).sort("startedAt", -1).to_list(100)
+
+    if min_pop > 0:
+        # Una sola aggregation para saber qué runs tienen alguna especie con pop >= min_pop
+        pipeline = [
+            {"$match":  {"species.population": {"$gte": min_pop}}},
+            {"$group":  {"_id": "$run_id"}},
+        ]
+        valid_ids = {doc["_id"] async for doc in db.snapshots.aggregate(pipeline)}
+
+        if cleanup:
+            # Solo se borran runs terminados sin datos relevantes
+            for r in runs:
+                rid = r["_id"]
+                if rid not in valid_ids and r.get("endedAt") is not None:
+                    await db.snapshots.delete_many({"run_id": rid})
+                    await db.species_events.delete_many({"run_id": rid})
+                    await db.extinctions.delete_many({"run_id": rid})
+                    await db.runs.delete_one({"_id": rid})
+
+        runs = [r for r in runs if r["_id"] in valid_ids]
+
     for r in runs:
         r["id"] = str(r.pop("_id"))
     return runs
